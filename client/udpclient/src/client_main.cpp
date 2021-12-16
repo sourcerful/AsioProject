@@ -1,14 +1,9 @@
-
-#ifndef _WIN32
-#define _WIN32_WINNT 0x0A00
-#endif
-
 #include <iostream>
+#include <cstdint>
 #include <fstream>
 #include <boost/asio.hpp>
 #include <boost/array.hpp>
 #include <boost/filesystem.hpp>
-//#include <asio/ts/buffer.hpp>
 
 using boost::asio::ip::udp;
 
@@ -35,7 +30,7 @@ int main()
     std::string protocolInfo;
 
     std::cout << "Enter the specified file (Full path) to send: ";
-    std::cin >> filePath; //C:\Users\Shonb\source\repos\BoostAsio\Client\test.png
+    std::cin >> filePath; ///home/sourcer/repos/udpFileTransfer/AsioProject/client/udpclient/src/assets/test.png
 
     while (!boost::filesystem::exists(filePath))
     {
@@ -63,7 +58,7 @@ int main()
 
         //send file size, name
         fileInfo.size = vBuffer.size();
-        strncpy_s(fileInfo.fileName, filePath.substr(filePath.find_last_of("/\\") + 1).c_str(), 
+        strncpy(fileInfo.fileName, filePath.substr(filePath.find_last_of("/\\") + 1).c_str(), 
                   sizeof(fileInfo.fileName) - 1);
         std::cout << "name: " << fileInfo.fileName << std::endl;
         std::cout << "size: " << fileInfo.size << std::endl;
@@ -86,11 +81,11 @@ int main()
 void sendFile(std::vector<uint8_t>& vec, udp::socket &socket, udp::endpoint& server_endpoint)
 {
     std::streampos x;
-    size_t send = 0;
+    uint32_t send = 0;
     int cnt = 0;
     while (send < vec.size()) {
         send += socket.send_to(boost::asio::buffer(vBuffer.data() + send, 
-                               std::min(4096U, vBuffer.size() - send)), 
+                               std::min(4096U, static_cast<uint32_t>(vBuffer.size() - send))), 
                                server_endpoint);
 
         std::printf("Sent: %lu\n", send);
@@ -109,8 +104,8 @@ void read_fileToVector(std::string filePath, std::vector<uint8_t>& vec)
 
     if (file.is_open())
     {             
-        std::copy(std::istream_iterator<BYTE>(file),
-        std::istream_iterator<BYTE>(),
+        std::copy(std::istream_iterator<uint8_t>(file),
+        std::istream_iterator<uint8_t>(),
         std::back_inserter(vec));        
     }
 }

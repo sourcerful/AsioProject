@@ -1,11 +1,9 @@
 #pragma once
 
-#ifndef _WIN32
-#define _WIN32_WINNT 0x0A00
-#endif
-
 #include <cstdint>
 #include <iostream>
+#include <cstring>
+#include <string>
 #include <fstream>
 #include <boost/asio.hpp>
 #include <boost/asio/ts/buffer.hpp>
@@ -34,4 +32,4 @@ struct file_info
     std::uint32_t size;
 };
 
-std::ostream& operator<<(std::ostream& out, std::vector<BYTE>& v);
+std::ostream& operator<<(std::ostream& out, std::vector<char>& v);
