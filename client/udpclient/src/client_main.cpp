@@ -88,11 +88,14 @@ void sendFile(std::vector<uint8_t>& vec, udp::socket &socket, udp::endpoint& ser
                                std::min(4096U, static_cast<uint32_t>(vBuffer.size() - send))), 
                                server_endpoint);
 
-        std::printf("Sent: %lu\n", send);
-        std::printf("cnt=%d\n", cnt++);
+        std::cout << "Sent: " << send << std::endl;
+        std::cout << "cnt=" << cnt++ << std::endl;
     }
 }
-
+void fec_encoder()
+{
+	;
+}
 void read_fileToVector(std::string filePath, std::vector<uint8_t>& vec)
 {
     std::ifstream file(filePath, std::ios::in | std::ios::binary | std::ios::ate);
@@ -108,6 +111,8 @@ void read_fileToVector(std::string filePath, std::vector<uint8_t>& vec)
         std::istream_iterator<uint8_t>(),
         std::back_inserter(vec));        
     }
+
+    file.close();
 }
 std::ostream& operator<<(std::ostream& out, std::vector<char>& v)
 {

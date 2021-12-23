@@ -68,13 +68,13 @@ void UDPServer::saveFile(udp::endpoint& sender, std::uint32_t maxFileSize, udp::
             }
             try
             {
-                std::printf("LOG -> Got %lu size, writing..\n", length);
+                std::cout << "LOG -> Got" << length <<  "size, writing..\n";
                 _outFile.write(_vBuffer.data(), length);
 
                 std::cout << "REACHED POINTER= " << _outFile.tellp() << std::endl;
                 std::cout << "max file size: " << maxFileSize << std::endl;
                 if (_outFile.tellp() == maxFileSize) {
-                    std::printf("Stopping!, max file size=%lu, ptr= %lu\n", maxFileSize, _outFile.tellp());
+		std::cout << "Stopping!, max file size=" << maxFileSize << ", ptr=" << _outFile.tellp() << std::endl;
                     _io_context.stop();
                     return;
                 }
