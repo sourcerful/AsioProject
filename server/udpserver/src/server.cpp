@@ -12,16 +12,17 @@ void UDPServer::run()
     std::thread thread_context = std::thread([&] {_io_context.run(); }); //start the context's work.
     //Give fake tasks so context doesn't finish. this is for async use
     boost::asio::io_context::work idleWork(_io_context);
-
     udp::socket socket(_io_context, _reciever); //the file descriptor / socket descriptor.
     boost::system::error_code error;
+	std::vector<char> temp(4096);
 
     std::cout << "listening." << std::endl;
 
     udp::endpoint sender;
     file_info fileInfo;
-    memset(&fileInfo, sizeof(fileInfo), 0);
-
+    memset(&fileInfo, sizeof(fileInfo), 0); //reset the struct to 0 (good practice)
+	std::fill(temp.begin(), temp.end(), 0); //fill temp vector with 0 
+		
     //socket.recieve_from waits for an incoming packet (UDP at this case), fills the buffer with the recieved data
     //and fills the "sender" endpoint with an information about the sender which is also a pair of IP and port. 
 
@@ -37,14 +38,14 @@ void UDPServer::run()
 
     try
     {	    
-	_vBuffer.resize(4096);
+		_vBuffer.resize(4096);
         //several overloads to recieve_from and send_to.
-	//socket.send_to(boost::asio::buffer(vBuffer.data(), bytes_transferred), sender);            
-	std::string folder(fileInfo.fileName);
-	relative_path += folder;	
+		//socket.send_to(boost::asio::buffer(vBuffer.data(), bytes_transferred), sender);            
+		std::string folder(fileInfo.fileName);
+		relative_path += folder;	
 
     	_outFile.open(relative_path.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
-    	saveFile(sender, fileInfo.size, socket);
+    	saveFile(sender, fileInfo.size, socket, temp);
     }
     catch(std::exception &e)
     {
@@ -57,27 +58,38 @@ void UDPServer::run()
     std::cout << "I'm done!" << std::endl;
 }
 // three / is good
-void UDPServer::saveFile(udp::endpoint& sender, std::uint32_t maxFileSize, udp::socket& socket)
+void UDPServer::saveFile(udp::endpoint& sender, std::uint32_t maxFileSize, udp::socket& socket, std::vector<char>& temp)
 {
     socket.async_receive_from(boost::asio::buffer(_vBuffer.data(), _vBuffer.size()), sender, 0, 
-        [&sender, &socket, maxFileSize, this](boost::system::error_code ec, std::size_t length)
+        [&sender, &socket, maxFileSize, &temp, this](boost::system::error_code ec, std::size_t length)
         {     
-            if (ec) {
+            if (ec) 
+			{
                 std::cerr << ec.message() << std::endl;
                 return;
             }
             try
             {
-                std::cout << "LOG -> Got" << length <<  "size, writing..\n";
-                _outFile.write(_vBuffer.data(), length);
-
-                std::cout << "REACHED POINTER= " << _outFile.tellp() << std::endl;
-                std::cout << "max file size: " << maxFileSize << std::endl;
-                if (_outFile.tellp() == maxFileSize) {
-		std::cout << "Stopping!, max file size=" << maxFileSize << ", ptr=" << _outFile.tellp() << std::endl;
-                    _io_context.stop();
-                    return;
-                }
+                std::cout << "LOG -> Got " << length;
+     	    	if(length > 0)
+					std::cout << " size, writing...\n";
+				else
+					std::cout << " size\n";
+				if(length == 0 || temp == _vBuffer)
+					saveFile(sender, maxFileSize, socket, temp); 	
+				else
+				{	
+					_outFile.write(_vBuffer.data(), length);
+                	temp = _vBuffer;
+					std::cout << "REACHED POINTER= " << _outFile.tellp() << std::endl;
+                	std::cout << "max file size: " << maxFileSize << std::endl;
+                	if (_outFile.tellp() == maxFileSize) 
+					{
+						std::cout << "Stopping!, max file size=" << maxFileSize << ", ptr=" << _outFile.tellp() << std::endl;
+                    	_io_context.stop();
+                    	return;
+                	}
+				}
             }
             catch (std::exception& ex)
             {
@@ -86,7 +98,7 @@ void UDPServer::saveFile(udp::endpoint& sender, std::uint32_t maxFileSize, udp::
                 return;
             }
 
-            saveFile(sender, maxFileSize, socket);            
+            saveFile(sender, maxFileSize, socket, temp);            
         }
     );    
 }

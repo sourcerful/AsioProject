@@ -9,7 +9,8 @@ using boost::asio::ip::udp;
 
 std::ostream& operator<<(std::ostream& out, std::vector<uint8_t>& v);   
 void read_fileToVector(std::string filePath, std::vector<uint8_t>& vec);
-void sendFile(std::vector<uint8_t>& vec, udp::socket& socket, udp::endpoint& server_endpoint);
+void sendFile(udp::socket& socket, udp::endpoint& server_endpoint);
+void sendPacket(udp::socket& socket, udp::endpoint& server_endpoint, const uint32_t& packet_size, uint32_t sent, int count, uint8_t times);
 std::vector<uint8_t> vBuffer;
 
 struct file_info
@@ -21,7 +22,6 @@ struct file_info
 int main()
 {
     std::uint16_t port = 2000;
-
     file_info fileInfo;
     std::string filePath;
     boost::asio::io_context io_context;
@@ -69,7 +69,7 @@ int main()
         try
         {       
            // socket.send_to(boost::asio::buffer(vBuffer.data(), vBuffer.size()), server_endpoint);
-           sendFile(vBuffer, socket, server_endpoint);
+           sendFile(socket, server_endpoint);
         }
         catch (std::exception& e)
         {
@@ -78,18 +78,42 @@ int main()
         socket.close();
     }
 }
-void sendFile(std::vector<uint8_t>& vec, udp::socket &socket, udp::endpoint& server_endpoint)
+void sendFile(udp::socket &socket, udp::endpoint& server_endpoint)
 {
-    std::streampos x;
-    uint32_t send = 0;
-    int cnt = 0;
-    while (send < vec.size()) {
-        send += socket.send_to(boost::asio::buffer(vBuffer.data() + send, 
-                               std::min(4096U, static_cast<uint32_t>(vBuffer.size() - send))), 
-                               server_endpoint);
+    uint32_t sent = 0;
+    uint32_t packet_size = 4096U;
+    int count = 0;
 
-        std::cout << "Sent: " << send << std::endl;
-        std::cout << "cnt=" << cnt++ << std::endl;
+    while (sent < vBuffer.size()) //TODO: maybe add a function that gets how many times to send a packet.
+    {
+		do
+		{
+        		packet_size = socket.send_to(boost::asio::buffer(vBuffer.data() + sent, 
+           	                    std::min(packet_size, static_cast<uint32_t>(vBuffer.size() - sent))), 
+           	                    server_endpoint);
+		}
+		while(packet_size == 0);
+
+		sendPacket(socket, server_endpoint, packet_size, sent, count, 2);	
+
+		sent += packet_size;
+
+		std::cout << "sent: " << sent << std::endl;
+        std::cout << "count: " << count++ << std::endl;
+    }
+}
+void sendPacket(udp::socket& socket, udp::endpoint& server_endpoint, const uint32_t& packet_size, uint32_t sent, int count, uint8_t times)
+{
+    int i = 0;
+	uint32_t sendSize = packet_size;	
+
+    while(i < times)
+    { 
+		sendSize = socket.send_to(boost::asio::buffer(vBuffer.data() + sent, packet_size), server_endpoint); 
+		if(sendSize == 0)
+			continue;
+		else
+			i++;
     }
 }
 void fec_encoder()

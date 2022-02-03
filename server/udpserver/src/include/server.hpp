@@ -23,7 +23,7 @@ private:
 public:
     UDPServer(std::uint16_t);
     void run();
-    void saveFile(udp::endpoint&, std::uint32_t, udp::socket&);
+    void saveFile(udp::endpoint&, std::uint32_t, udp::socket&, std::vector<char>&);
 };
 
 struct file_info

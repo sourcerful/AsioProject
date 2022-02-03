@@ -5,11 +5,11 @@
 #- dependencies mean that if the file has been modified (even if its using the
 #  "touch" command) then it will go into the target's action.
 
-clientOutput: client_main.o
-	g++ -std=c++17 client_main.o -o client -lpthread -lboost_filesystem -lboost_system
+clientOutput: client.o
+	g++ -std=c++17 client.o -o client -lpthread -lboost_filesystem -lboost_system
 
-client.o: client_main.cpp
-	g++ -std=c++17 -c client_main.cpp -I/home/sourcer/repos/udpFileTransfer/3rd_parties/boost_1_77_0/ 
+client.o: client.cpp
+	g++ -std=c++17 -c client.cpp -I/home/sourcer/repos/udpFileTransfer/3rd_parties/boost_1_77_0/ 
 
 clean:
 	rm *.o client_main                                                                           
